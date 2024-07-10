@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import re
+from datetime import datetime
 
 # Replace 'your_url' with the actual URL
 url = 'https://cabezo.bergfex.at/'
@@ -73,6 +74,20 @@ if response.status_code == 200:
 
             # Convert the data into a Pandas DataFrame
             df = pd.DataFrame(data, columns=columns)
+
+            # Clean the data
+            current_date = datetime.now().strftime('%d/%m/%Y')
+            df['time'] = df['time'].apply(lambda x: f"{current_date} {x}")
+
+            # Drop columns with '_kmh' in the name
+            df = df.drop(columns=[col for col in df.columns if col.endswith('_kmh')])
+
+            # Create new columns
+            df['wind_speed_kts_text'] = df['wind_speed_kts'].apply(lambda x: f"{x} kts" if pd.notna(x) else None)
+            df['gusts_speed_kts_text'] = df['gusts_speed_kts'].apply(lambda x: f"{x} kts" if pd.notna(x) else None)
+
+            # Drop the last row
+            df = df.iloc[:-1]
 
             # Export the DataFrame to a CSV file
             csv_file_path = 'weather_data.csv'
